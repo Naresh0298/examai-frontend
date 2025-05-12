@@ -1,6 +1,5 @@
 
 "use client";
-import { useState } from 'react';
 import FileUpload from '@/components/FileUpload'; // Adjust path if necessary
 
 
@@ -12,7 +11,7 @@ export default function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center p-10 space-y-8">
-      <h1 className="text-3xl font-bold">FastAPI Test Frontend</h1>
+      <h1 className="text-3xl font-bold">Exam AI</h1>
 
       {/* --- File Upload Section --- */}
       <FileUpload
