@@ -7,13 +7,26 @@ interface FileUploadProps {
   uploadUrl: string; // URL of your FastAPI upload endpoint
   expectedFieldName: string; // The field name FastAPI expects for the file(s) (e.g., 'files')
 }
+interface UploadSuccessResponse {
+  message: string;
+  filenames: string[];
+  upload_ids: number[];
+  // Potentially other fields relevant to your application
+}
+
+// Define the structure of FastAPI validation error items
+interface FastAPIValidationError {
+    loc: (string | number)[];
+    msg: string;
+    type: string; // Or other relevant fields from FastAPI's error detail
+}
 
 export default function FileUpload({ uploadUrl, expectedFieldName }: FileUploadProps) {
   // --- MODIFICATION 1: Change state to hold FileList for multiple files ---
   const [selectedFiles, setSelectedFiles] = useState<FileList | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [uploadResponse, setUploadResponse] = useState<any | null>(null); // To store backend response
+  const [uploadResponse, setUploadResponse] = useState<UploadSuccessResponse | null>(null); // To store backend response
 
   // --- MODIFICATION 2: Update handler to store the FileList ---
   const handleFileChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -76,7 +89,7 @@ export default function FileUpload({ uploadUrl, expectedFieldName }: FileUploadP
                errorMessage = `Server Error (${response.status}): ${result.detail}`;
             } else if (Array.isArray(result.detail)) {
                 // Format FastAPI validation errors
-                errorMessage = `Server Validation Error (${response.status}): ${result.detail.map((e: any) => `${e.loc?.join('->') || 'field'}: ${e.msg}`).join(', ')}`;
+                errorMessage = `Server Validation Error (${response.status}): ${result.detail.map((e: FastAPIValidationError) => `${e.loc?.join('->') || 'field'}: ${e.msg}`).join(', ')}`;
             } else {
                errorMessage = `Server Error (${response.status}): ${JSON.stringify(result.detail)}`;
             }
@@ -88,9 +101,15 @@ export default function FileUpload({ uploadUrl, expectedFieldName }: FileUploadP
       setUploadResponse(result); // Store successful response from backend
       setSelectedFiles(null); // Clear the file input after successful upload
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Upload error caught:", err);
-      setError(err.message || "An error occurred during upload.");
+      if (err instanceof Error) {
+        setError(err.message);
+      } else if (typeof err === 'string') {
+        setError(err); // If the error is just a string
+      } else {
+        setError("An error occurred during upload.");
+      }
     } finally {
       setIsLoading(false);
     }
